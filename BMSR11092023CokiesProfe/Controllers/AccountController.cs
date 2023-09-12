@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -8,36 +11,50 @@ namespace BMSR11092023CokiesProfe.Controllers
     [ApiController]
     public class AccountController : ControllerBase
     {
-        // GET: api/<AccountController>
-        [HttpGet]
-        public IEnumerable<string> Get()
+        [HttpPost("login")]
+        public IActionResult Login(string login, string password)
         {
-            return new string[] { "value1", "value2" };
-        }
+            //Coprueba si las credenciales son validas
+            if (login == "admin" && password == "12345")
+            {
+                //Crea una lista de reclamaciones(claims)
+                var claims = new List<Claim>
+                {
+                    //Agrega una reclamacion de nombres con e valor de 'login'
+                    new Claim(ClaimTypes.Name, login),
+                };
 
-        // GET api/<AccountController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
-        {
-            return "value";
-        }
+                //Crea una identidad de reclamaciones (claims identity)
+                // Con el esquema de autenticacion por cookies
+                var claimsIdentity = new ClaimsIdentity(claims,
+                    CookieAuthenticationDefaults.AuthenticationScheme);
 
-        // POST api/<AccountController>
-        [HttpPost]
-        public void Post([FromBody] string value)
-        {
-        }
+                //Crea propiedades de autenticacion adicionales
+                //(puedes crear mas aqui si es necesario)
+                var authProperties = new AuthenticationProperties();
+                {
+                    //Puedes configurar mas propiedades adicionales aqui
+                }
+                //Inicia sesion del usuario
+                HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(claimsIdentity), authProperties);
 
-        // PUT api/<AccountController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
+                //Devuelve una respuesta exitosa
+                return Ok("Inicio de sesion correctamente");
+            }
+            else
+            {
+                //Devuelve una respuesta no autorizada si las credenciales son incorrectas
+                return Unauthorized("Credenciales incorrectas");
+            }
         }
-
-        // DELETE api/<AccountController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
+        [HttpPost("logout")]
+        public IActionResult logout()
         {
+            //Cierra la sesion del usuario
+            HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            //Devuelve una respuesta exitosa
+            return Ok("Cerro sesion correctamente.");
         }
     }
 }
